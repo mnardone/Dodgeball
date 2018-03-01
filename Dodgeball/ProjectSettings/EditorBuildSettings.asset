@@ -4,4 +4,10 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Scenes/Main.unity
+    guid: 995135e527c20074fb918a16bb9e5779
+  - enabled: 1
+    path: Assets/Scenes/Demo_ShuffleBoard.unity
+    guid: ff96fd6e9624bce4b8f1ec75ffce31bd
