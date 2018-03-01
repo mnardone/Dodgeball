@@ -1,4 +1,4 @@
 sceneSetups:
-- path: Assets/Scenes/Demo_Projectile.unity
+- path: Assets/Scenes/Demo_AIAgent.unity
   isLoaded: 1
   isActive: 1
