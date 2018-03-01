@@ -4,6 +4,7 @@ using UnityEngine.SceneManagement;
 public class PowerGauge : MonoBehaviour
 {
     [SerializeField] private Ball m_ball = null;
+    [SerializeField] private BallProjectile m_proj = null;
     [SerializeField] private Transform m_powerGaugeSlider = null;
     [SerializeField] private float m_sliderSpeed = 1f;
 
@@ -39,15 +40,16 @@ public class PowerGauge : MonoBehaviour
             if (SceneManager.GetActiveScene().buildIndex == 1)
             {
                 multiplier = (220f - Mathf.Abs(m_powerGaugeSlider.localPosition.x)) / 220f;
+                m_ball.ShuffleBoard(multiplier);
             }
             // Projectile: centre is correct force,  left is less force, right is more force
             else if (SceneManager.GetActiveScene().buildIndex == 2)
             {
                 multiplier = (220f + m_powerGaugeSlider.localPosition.x) / 220f;
+                m_proj.ApplyGaugeMultiplier(multiplier);
             }
 
             Debug.LogFormat("Gauge Multiplier %: {0}", multiplier * 100f);
-            m_ball.ShuffleBoard(multiplier);
         }
 	}
 }
