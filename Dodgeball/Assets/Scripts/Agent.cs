@@ -4,45 +4,39 @@ using UnityEngine;
 
 public class Agent : MonoBehaviour {
 
-    public Transform m_redPost;
-    public Transform m_bluePost;
+    [Header("Posts")]
+    [SerializeField] private Transform m_redPost;
+    [SerializeField] private Transform m_bluePost;
+    [Header("Team Colours")]
+    [SerializeField] private Material m_redMaterial;
+    [SerializeField] private Material m_blueMaterial;
+    [SerializeField] private Material m_defaultMaterial;
+    [Header("Linear and Angular Motion")]
+    [SerializeField] private float m_linearMaxSpeed = 0.0f;
+    [SerializeField] private float m_angularMaxSpeed = 0.0f;
+    [SerializeField] private float m_linearAcceleration = 0.0f;
+    [SerializeField] private float m_angularAcceleration = 0.0f;
 
-    public Material m_redMaterial;
-    public Material m_blueMaterial;
+    public float linearSpeed { get; set; }
 
-    public Material m_defaultMaterial;
+    public float linearMaxSpeed { get { return m_linearMaxSpeed; } }
 
-    public float m_linearMaxSpeed = 0.0f;
-    public float m_angularMaxSpeed = 0.0f;
+    public float angularSpeed { get; set; }
 
-    public float m_linearAcceleration = 0.0f;
-    public float m_angularAcceleration = 0.0f;
-
-    public float linearSpeed
-    {
-        get;
-        set;
-    }
-
-    public float angularSpeed
-    {
-        get;
-        set;
-    }
-
+    public float angularMaxSpeed { get { return m_angularMaxSpeed; } }
 
     private Rigidbody m_rb = null;
 
-    // Use this for initialization
-    void Start () {
+    void Awake ()
+    {
         m_rb = GetComponent<Rigidbody>();
         DetermineAgentColour();
         linearSpeed = 0.0f;
         angularSpeed = 0.0f;
     }
 	
-	// Update is called once per frame
-	void Update () {
+	void Update ()
+    {
         DetermineAgentColour();
     }
 
@@ -51,20 +45,18 @@ public class Agent : MonoBehaviour {
         Vector3 agentPosition = transform.position;
         float distanceToRedPost = Vector3.Distance(agentPosition, m_redPost.position);
         float distanceToBluePost = Vector3.Distance(agentPosition, m_bluePost.position);
-        if( Mathf.Abs(distanceToBluePost - distanceToRedPost) < 5.0f )
+
+        if ( Mathf.Abs(distanceToBluePost - distanceToRedPost) < 5.0f )
         {
-            //neutral
             SetMaterial(m_defaultMaterial);
 
         }
-        else if( distanceToRedPost > distanceToBluePost )
+        else if ( distanceToRedPost > distanceToBluePost )
         {
-            //blue
             SetMaterial(m_blueMaterial);
         }
         else
         {
-            //red
             SetMaterial(m_redMaterial);
         }
     }
