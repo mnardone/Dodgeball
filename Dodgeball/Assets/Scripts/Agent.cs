@@ -27,17 +27,33 @@ public class Agent : MonoBehaviour {
 
     private Rigidbody m_rb = null;
 
+    public enum Team
+    {
+        Red = 0,
+        Blue
+    }
+
+    private Team m_team;
+
+    public enum State
+    {
+        Wander = 0,
+        Attack,
+        Defend
+    }
+
+    private State m_state;
+
     void Awake ()
     {
         m_rb = GetComponent<Rigidbody>();
         DetermineAgentColour();
-        linearSpeed = 0.0f;
-        angularSpeed = 0.0f;
+        m_state = State.Wander;
     }
-	
-	void Update ()
+
+    private void Update()
     {
-        DetermineAgentColour();
+        Debug.Log(m_state.ToString());
     }
 
     protected void DetermineAgentColour()
@@ -54,10 +70,12 @@ public class Agent : MonoBehaviour {
         else if ( distanceToRedPost > distanceToBluePost )
         {
             SetMaterial(m_blueMaterial);
+            m_team = Team.Blue;
         }
         else
         {
             SetMaterial(m_redMaterial);
+            m_team = Team.Red;
         }
     }
 
@@ -65,6 +83,21 @@ public class Agent : MonoBehaviour {
     {
         MeshRenderer rend = GetComponent<MeshRenderer>();
         rend.material = mat;
+    }
+
+    public Team GetTeam()
+    {
+        return m_team;
+    }
+
+    public State GetState()
+    {
+        return m_state;
+    }
+
+    public void ChangeState(int state)
+    {
+        m_state = (State)state;
     }
 
     public void MoveForwards()
@@ -108,5 +141,10 @@ public class Agent : MonoBehaviour {
     public void StopAngularVelocity()
     {
         m_rb.angularVelocity = Vector3.zero;
+    }
+
+    public void Throw()
+    {
+
     }
 }
