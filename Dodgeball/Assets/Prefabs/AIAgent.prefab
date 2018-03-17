@@ -42,7 +42,7 @@ GameObject:
   - component: {fileID: 23834498700129622}
   - component: {fileID: 54141244595412282}
   - component: {fileID: 114204074612384256}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: AIAgent
   m_TagString: Agent
   m_Icon: {fileID: 0}
@@ -100,7 +100,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1401287014297344}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.5, z: 0}
+  m_LocalPosition: {x: -5, y: 1, z: 5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 4249763768116194}

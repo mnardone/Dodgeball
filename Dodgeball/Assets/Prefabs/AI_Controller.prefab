@@ -34,7 +34,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1746505181717012}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -32.295517, y: -43.72468, z: 36.229885}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -52,8 +52,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_agent: {fileID: 0}
+  m_team: 0
+  m_ball: {fileID: 0}
+  ballCollected: 0
   m_maxAngularSpeedAngle: 45
   m_minAngularSpeedAngle: 10
   m_maxSpeedDistance: 5
   m_destinationBuffer: 2
-  m_scanDistance: 20
+  m_unstuckLayer:
+    serializedVersion: 2
+    m_Bits: 512
+  m_blueCourtCentreZ: -12.5
+  m_redCourtCentreZ: 12.5
+  m_courtDimensions: {x: 25, y: 0.5, z: 12.1}
+  m_bluePost: {fileID: 0}
+  m_redPost: {fileID: 0}
+  m_target: {fileID: 0}
+  m_targetDistance: 0
+  m_maxThrowDistance: 0
