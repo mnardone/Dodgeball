@@ -31,25 +31,27 @@ public class PowerGauge : MonoBehaviour
 
         m_powerGaugeSlider.transform.Translate(m_nextMovement);
 
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            float multiplier = 0f;
-            m_nextMovement = Vector3.zero;
+        // revamp so it works for ball projectile script
 
-            // Shuffle board: centre is correct force, left/right are less force
-            if (SceneManager.GetActiveScene().buildIndex == 1)
-            {
-                multiplier = (220f - Mathf.Abs(m_powerGaugeSlider.localPosition.x)) / 220f;
-                m_ball.ShuffleBoard(multiplier);
-            }
-            // Projectile: centre is correct force,  left is less force, right is more force
-            else if (SceneManager.GetActiveScene().buildIndex == 2)
-            {
-                multiplier = (220f + m_powerGaugeSlider.localPosition.x) / 220f;
-                m_proj.ApplyGaugeMultiplier(multiplier);
-            }
+        //if (Input.GetKeyDown(KeyCode.Space))
+        //{
+        //    float multiplier = 0f;
+        //    m_nextMovement = Vector3.zero;
 
-            //Debug.LogFormat("Gauge Multiplier %: {0}", multiplier * 100f);
-        }
+        //    // Shuffle board: centre is correct force, left/right are less force
+        //    if (SceneManager.GetActiveScene().buildIndex == 1)
+        //    {
+        //        multiplier = (220f - Mathf.Abs(m_powerGaugeSlider.localPosition.x)) / 220f;
+        //        m_ball.ShuffleBoard(multiplier);
+        //    }
+        //    // Projectile: centre is correct force,  left is less force, right is more force
+        //    else if (SceneManager.GetActiveScene().buildIndex == 2)
+        //    {
+        //        multiplier = (220f + m_powerGaugeSlider.localPosition.x) / 220f;
+        //        m_proj.ApplyGaugeMultiplier(multiplier);
+        //    }
+
+        //    //Debug.LogFormat("Gauge Multiplier %: {0}", multiplier * 100f);
+        //}
 	}
 }

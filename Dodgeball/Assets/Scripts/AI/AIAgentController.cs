@@ -216,6 +216,7 @@ public class AIAgentController : MonoBehaviour
     private void OnDestinationFound(Vector3 destination)
     {
         NavMeshPath path = new NavMeshPath();
+        
         bool isSuccess = NavMesh.CalculatePath(m_agent.transform.position, destination, NavMesh.AllAreas, path);
 
         if (isSuccess)
@@ -301,6 +302,12 @@ public class AIAgentController : MonoBehaviour
     {
         if (!HasDestination() || !m_ball)
         {
+            return;
+        }
+
+        if (m_ball.GetComponent<Rigidbody>().isKinematic)
+        {
+            m_pathList.Clear();
             return;
         }
 

@@ -15,16 +15,19 @@ public class Target : MonoBehaviour
         m_rb = GetComponent<Rigidbody>();
 	}
 
-    // Called by spawner when object is created
-    public void SetVelocity(Vector3 velocity)
+    private void FixedUpdate()
     {
-        m_rb.velocity = velocity;
+        if (m_rb.velocity != Vector3.zero)
+        {
+            PhysicsGameManager.Instance.CheckBoundaries(m_rb);
+        }
     }
 
-    // Called by player when throwing at this target
-    public Vector3 GetVelocity()
+    // Called by spawner when object is created
+    public void Initialize()
     {
-        return m_rb.velocity;
+        transform.position = m_position;
+        m_rb.velocity = m_velocity;
     }
 
     // Score added based on point of collision

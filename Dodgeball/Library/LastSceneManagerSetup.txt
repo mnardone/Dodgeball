@@ -1,4 +1,4 @@
 sceneSetups:
-- path: Assets/Scenes/HitTheTarget.unity
+- path: Assets/Scenes/Dodgeball.unity
   isLoaded: 1
   isActive: 1

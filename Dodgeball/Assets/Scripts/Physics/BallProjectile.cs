@@ -5,16 +5,15 @@ using UnityEngine;
 public class BallProjectile : MonoBehaviour
 {
     private Rigidbody m_rb = null;
-    private float m_timeElapsed = 0.0f;
 
-    [SerializeField] private AnimationCurve attempt;
+    // Stationary target
+    private Transform m_targetTransform;
 
-    [Header("Stationary Target, Minimum Speed")]
-    [SerializeField] private Transform m_targetTransform;
     [SerializeField] private float m_maxSpeed = 25f;
-    [Header("Moving Target, Desired Air Time")]
-    [SerializeField] private GameObject m_target = null;
-    [SerializeField] private float m_desiredAirTime = 1.0f;
+
+    // Moving target
+    private GameObject m_target = null;
+    private float m_desiredAirTime = 1.0f;
 
     public bool inAir { get; private set; }
 
@@ -22,14 +21,6 @@ public class BallProjectile : MonoBehaviour
     {
         m_rb = GetComponent<Rigidbody>();
         inAir = false;
-    }
-
-    private void FixedUpdate()
-    {
-        if (m_rb.velocity.magnitude > Mathf.Epsilon)
-        {
-            m_timeElapsed += Time.deltaTime;
-        }
     }
 
     // Generates a random value in a normal distribution
@@ -52,7 +43,6 @@ public class BallProjectile : MonoBehaviour
     private Vector3 GenerateRandomUnitVector()
     {
         Vector3 rand = Random.insideUnitSphere;
-        //Debug.Log("Random Vector3 = " + rand);
         return rand;
     }
 
@@ -62,17 +52,17 @@ public class BallProjectile : MonoBehaviour
         m_target = target;
         this.transform.SetParent(null);
         inAir = true;
-        //Debug.Log("inAir is " + inAir);
         Vector3 velocity = CalculateWithMaxVel(CalculateTargetPosition() + GenerateRandomUnitVector() * GenerateRandomValue()).velocity;
         m_rb.isKinematic = false;
         m_rb.velocity = velocity;
     }
 
     // This method is called by the ball in Hit The Target
-    public void ApplyGaugeMultiplier(float multiplier)
+    public void ApplyGaugeMultiplier(float multiplier, GameObject target)
     {
+        m_target = target;
         m_rb.isKinematic = false;
-        m_rb.velocity = CalculateWithMaxVel(CalculateTargetPosition() + GenerateRandomUnitVector() * GenerateRandomValue()).velocity; // * multiplier;
+        m_rb.velocity = CalculateWithMaxVel(CalculateTargetPosition()).velocity * multiplier;
     }
 
     public struct VelocityTimeData
