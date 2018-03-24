@@ -13,7 +13,7 @@ NavMeshProjectSettings:
     cost: 2
   - name: Blue
     cost: 1
-  - name: 
+  - name: Red
     cost: 1
   - name: 
     cost: 1

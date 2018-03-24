@@ -1,6 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
+using UnityEngine.UI;
 
 public class Agent : MonoBehaviour {
 
@@ -16,6 +18,11 @@ public class Agent : MonoBehaviour {
     [SerializeField] private float m_angularMaxSpeed = 0.0f;
     [SerializeField] private float m_linearAcceleration = 0.0f;
     [SerializeField] private float m_angularAcceleration = 0.0f;
+    [SerializeField] private AIAgentController m_controller = null;
+    [SerializeField] private Text m_hitText = null;
+    [SerializeField] private Text m_catchText = null;
+
+    private int m_areaMask;
 
     public float linearSpeed { get; set; }
 
@@ -44,17 +51,27 @@ public class Agent : MonoBehaviour {
 
     private State m_state;
 
+    private bool m_agentProximity = false;
+
+    public bool AgentProximity
+    {
+        get { return m_agentProximity; }
+    }
+
     void Awake ()
     {
         m_rb = GetComponent<Rigidbody>();
         DetermineAgentColour();
+        m_areaMask = 1 << NavMesh.GetAreaFromName(m_team.ToString());
         m_state = State.Wander;
+        m_hitText.gameObject.SetActive(false);
+        m_catchText.gameObject.SetActive(false);
     }
 
-    private void Update()
-    {
-        //Debug.LogFormat("{0} is in {1}", this.gameObject.name, m_state.ToString());
-    }
+    //private void Update()
+    //{
+    //    Debug.LogFormat("{0} is in {1}", this.gameObject.name, m_state.ToString());
+    //}
 
     protected void DetermineAgentColour()
     {
@@ -89,6 +106,11 @@ public class Agent : MonoBehaviour {
         return m_team;
     }
 
+    public int GetAreaMask()
+    {
+        return m_areaMask;
+    }
+
     public State GetState()
     {
         return m_state;
@@ -111,12 +133,16 @@ public class Agent : MonoBehaviour {
 
     public void StrafeLeft()
     {
-        m_rb.velocity = transform.right * linearSpeed * -1.0f;
+        //m_rb.velocity = transform.right * linearSpeed * -1.0f;
+
+        m_rb.AddForce(transform.right * linearSpeed * -1f, ForceMode.Force);
     }
 
     public void StrafeRight()
     {
-        m_rb.velocity = transform.right * linearSpeed;
+        //m_rb.velocity = transform.right * linearSpeed;
+
+        m_rb.AddForce(transform.right * linearSpeed, ForceMode.Force);
     }
 
     public void TurnRight()
@@ -142,8 +168,56 @@ public class Agent : MonoBehaviour {
         m_rb.angularVelocity = Vector3.zero;
     }
 
-    public void Throw()
+    private void ActivatePopUpText(Transform obj, Text text)
     {
+        text.gameObject.SetActive(true);
+        StartCoroutine(DisappearingText(text));
+    }
 
+    private IEnumerator DisappearingText(Text text)
+    {
+        yield return new WaitForSeconds(3f);
+        text.gameObject.SetActive(false);
+    }
+
+    private void OnCollisionEnter(Collision c)
+    {
+        if (c.gameObject.tag == "InteractableObject")
+        {
+            if (c.gameObject.GetComponent<BallProjectile>().inAir)
+            {
+                if (m_team == Team.Blue)
+                {
+                    DodgeballManager.Instance.ScoreRed += 1;
+                }
+                else
+                {
+                    DodgeballManager.Instance.ScoreBlue += 1;
+                }
+
+                ActivatePopUpText(c.gameObject.transform, m_hitText);
+            }
+            else
+            {
+                m_controller.PickUpBall(c.gameObject);
+                ActivatePopUpText(c.gameObject.transform, m_catchText);
+            }
+        }
+    }
+
+    private void OnTriggerEnter(Collider c)
+    {
+        if (c.gameObject.tag == "Agent")
+        {
+            m_agentProximity = true;
+        }
+    }
+
+    private void OnTriggerExit(Collider c)
+    {
+        if (c.gameObject.tag == "Agent")
+        {
+            m_agentProximity = false;
+        }
     }
 }

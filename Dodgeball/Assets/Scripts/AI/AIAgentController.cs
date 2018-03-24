@@ -8,10 +8,10 @@ public class AIAgentController : MonoBehaviour
     [SerializeField] private Agent m_agent = null;
     [SerializeField] private int m_team = 0;
     [SerializeField] private GameObject m_ball = null;
-    [SerializeField] private bool ballCollected = false;
+    [SerializeField] private bool m_ballCollected = false;
 
     private int m_state = -1;
-    private bool m_isRunning = false;
+    private bool m_enteredDefenseState = false;
 
     [Header("Navigation")]
     [SerializeField] private float m_maxAngularSpeedAngle = 45.0f;
@@ -37,7 +37,6 @@ public class AIAgentController : MonoBehaviour
 
     [Header("Target and Attacking")]
     [SerializeField] private Transform m_target = null;
-    [SerializeField] private float m_targetDistance = 0f;
     [SerializeField] private float m_maxThrowDistance = 0f;
 
     private void Start()
@@ -59,24 +58,23 @@ public class AIAgentController : MonoBehaviour
                 UpdateDestination();
                 MoveTowardsDestination();
                 TryPickup();
-                CheckWanderState();
                 break;
             case 1: //attack
-                CheckIfStuck();
                 ScanForTargets();
                 FindAttackDestination();
                 TryThrow();
-                CheckAttackState();
                 break;
             case 2: //defend
                 GenerateRandomPosition();
                 MoveTowardsDestination();
-                CheckDefendState();
                 break;
             default:
                 Debug.Log("How did you get here?");
                 break;
         }
+
+        CheckIfStuck();
+        CheckState();
     }
 
     // Startup -> Determine the centre of the court for the agent attached to this controller
@@ -104,12 +102,6 @@ public class AIAgentController : MonoBehaviour
         if (m_pathList.Count > 0)
         {
             Vector3 destination = m_pathList[0];
-
-            if (Mathf.Sign(destination.z) != m_zPosSign)
-            {
-                m_pathList.Clear();
-                return m_pathList.Count > 0;
-            }
 
             Vector3 toDestination = destination - m_agent.transform.position;
             float distanceToDestination = toDestination.magnitude;
@@ -162,6 +154,7 @@ public class AIAgentController : MonoBehaviour
         if (!HasDestination())
         {
             m_agent.StopAngularVelocity();
+            m_agent.StopLinearVelocity();
             return;
         }
 
@@ -189,6 +182,11 @@ public class AIAgentController : MonoBehaviour
 
         bool shouldTurnRight = rightToDestinationDot > Mathf.Epsilon;
 
+        //if (m_agent.AgentProximity)
+        //{
+        //    shouldTurnRight = true;
+        //}
+
         if (distanceToDestination > m_destinationBuffer)
         {
             if (shouldTurnRight)
@@ -203,6 +201,24 @@ public class AIAgentController : MonoBehaviour
             if (Mathf.Abs(m_agent.transform.position.z) > 0.5f
                 || Vector3.Dot(m_agent.transform.forward, -m_zPosSign * Vector3.forward) <= 0f)
             {
+                if (m_agent.AgentProximity)
+                {
+                    //if (shouldTurnRight)
+                    //{
+                    //    m_agent.StrafeRight();
+                    //}
+                    //else
+                    //{
+                    //    m_agent.StrafeLeft();
+                    //}
+
+                    m_agent.StrafeRight();
+                }
+                //else
+                //{
+                //    m_agent.MoveForwards();
+                //}
+
                 m_agent.MoveForwards();
             }
         }
@@ -213,11 +229,11 @@ public class AIAgentController : MonoBehaviour
     }
 
     // Any State -> Generate a path on the NavMesh to the parameter destination.
-    private void OnDestinationFound(Vector3 destination)
+    private void OnDestinationFound(Vector3 destination, int areaMask = -1)
     {
         NavMeshPath path = new NavMeshPath();
         
-        bool isSuccess = NavMesh.CalculatePath(m_agent.transform.position, destination, NavMesh.AllAreas, path);
+        bool isSuccess = NavMesh.CalculatePath(m_agent.transform.position, destination, areaMask, path);
 
         if (isSuccess)
         {
@@ -247,6 +263,79 @@ public class AIAgentController : MonoBehaviour
         return false;
     }
 
+    // Any state -> State transitions
+    private void CheckState()
+    {
+        if (m_ballCollected)
+        {
+            if (m_agent.GetState() != Agent.State.Attack)
+            {
+                m_pathList.Clear();
+                m_agent.ChangeState(1);
+            }
+        }
+        else if (ScanForLiveBall())
+        {
+            if (m_agent.GetState() != Agent.State.Wander)
+            {
+                m_pathList.Clear();
+                m_agent.ChangeState(0);
+            }
+        }
+        else
+        {
+            if (m_agent.GetState() != Agent.State.Defend)
+            {
+                m_pathList.Clear();
+                m_agent.ChangeState(2);
+                m_enteredDefenseState = true;
+            }
+        }
+    }
+
+    // Any state -> Wander state transition. Returns true if the Dodgeball is on this agent's side of the court, false otherwise.
+    private bool ScanForLiveBall()
+    {
+        int layer = LayerMask.NameToLayer("Interactable");
+        int layerMask = 1 << layer;
+        bool liveBallExists = false;
+
+        Collider[] hitInfo = Physics.OverlapBox(m_courtCentre, m_courtDimensions, Quaternion.identity, layerMask, QueryTriggerInteraction.Ignore);
+
+        for (int i = 0; i < hitInfo.Length; ++i)
+        {
+            // Ignore any ball that is in the air or currently being held by another agent (isKinematic)
+            if (hitInfo[i].GetComponent<BallProjectile>().inAir || hitInfo[i].GetComponent<Rigidbody>().isKinematic)
+            {
+                continue;
+            }
+            else
+            {
+                liveBallExists = true;
+
+                int agentLayerMask = 1 << LayerMask.NameToLayer("Target");
+                Collider[] agentHitInfo = Physics.OverlapBox(m_courtCentre, m_courtDimensions, Quaternion.identity, agentLayerMask, QueryTriggerInteraction.Ignore);
+                float distanceToBall = Vector3.Distance(m_agent.transform.position, hitInfo[i].transform.position);
+
+                for (int j = 0; j < agentHitInfo.Length; ++j)
+                {
+                    if (agentHitInfo[j].transform == m_agent.transform)
+                    {
+                        continue;
+                    }
+
+                    if (distanceToBall > Vector3.Distance(agentHitInfo[j].transform.position, hitInfo[i].transform.position))
+                    {
+                        //Debug.Log(this.name + " is not going to the ball anymore.");
+                        liveBallExists = false;
+                    }
+                }
+            }
+        }
+
+        return liveBallExists;
+    }
+
     // Wander State -> Scan this agent's side of the court for a ball to pick up.
     private void ScanForObjects()
     {
@@ -260,18 +349,11 @@ public class AIAgentController : MonoBehaviour
         int layer = LayerMask.NameToLayer("Interactable");
         int layerMask = 1 << layer;
 
-        Collider[] hitInfo = Physics.OverlapBox(m_courtCentre, m_courtDimensions, Quaternion.identity, layerMask);
+        Collider[] hitInfo = Physics.OverlapBox(m_courtCentre, m_courtDimensions, Quaternion.identity, layerMask, QueryTriggerInteraction.Ignore);
 
         for (int i = 0; i < hitInfo.Length; ++i)
         {
-            float distanceToObject = Vector3.Distance(agentPosition, hitInfo[i].transform.position);
-
-            // If the ball is close to the agent, remember it's there (so TryPickup will occur) but do not create a path
-            if (distanceToObject < m_destinationBuffer)
-            {
-                m_ball = hitInfo[i].gameObject;
-                continue;
-            }
+            //Debug.Log("Scanned ball. Ball.inAir = " + hitInfo[i].GetComponent<BallProjectile>().inAir);
 
             // If the ball is in the air or currently being held by another agent (isKinematic) do not create a path
             if (hitInfo[i].GetComponent<BallProjectile>().inAir || hitInfo[i].GetComponent<Rigidbody>().isKinematic)
@@ -279,8 +361,17 @@ public class AIAgentController : MonoBehaviour
                 continue;
             }
 
+            float distanceToObject = Vector3.Distance(agentPosition, hitInfo[i].transform.position);
             m_ball = hitInfo[i].gameObject;
-            OnDestinationFound(hitInfo[i].transform.position);
+            
+
+            // If the ball is close to the agent, do not create a path
+            if (distanceToObject < m_destinationBuffer)
+            {
+                continue;
+            }
+
+            OnDestinationFound(hitInfo[i].transform.position/*, m_agent.GetAreaMask()*/);
             i = hitInfo.Length;
         }
 
@@ -305,18 +396,21 @@ public class AIAgentController : MonoBehaviour
             return;
         }
 
-        if (m_ball.GetComponent<Rigidbody>().isKinematic)
+        Vector3 destination = m_pathList[m_pathList.Count - 1];
+
+        // If the ball has been picked up OR the ball is on the opposite side of the court
+        if (m_ball.GetComponent<Rigidbody>().isKinematic || Mathf.Sign(destination.z) != m_zPosSign)
         {
+            Debug.Log("Ball is picked up OR on the other side.");
             m_pathList.Clear();
             return;
         }
-
-        Vector3 destination = m_pathList[m_pathList.Count - 1];
+        
         Vector3 ballPos = m_ball.transform.position;
 
         if (Vector3.Distance(destination, ballPos) > 1f)
         {
-            OnDestinationFound(ballPos);
+            OnDestinationFound(ballPos/*, m_agent.GetAreaMask()*/);
         }
     }
 
@@ -331,16 +425,26 @@ public class AIAgentController : MonoBehaviour
         if (m_ball && Vector3.Distance(m_agent.transform.position, m_ball.transform.position) < m_destinationBuffer)
         {
             m_ball.transform.SetParent(m_agent.transform);
-            m_ball.transform.localPosition = Vector3.forward * 1.5f;
-            ballCollected = true;
+            m_ball.transform.localPosition = Vector3.up * 1.8f;
+            m_ballCollected = true;
             m_ball.GetComponent<Rigidbody>().isKinematic = true;
         }
+    }
+
+    public void PickUpBall(GameObject ball)
+    {
+        Debug.Log("Catching the ball");
+        m_ball = ball;
+        m_ball.transform.SetParent(m_agent.transform);
+        m_ball.transform.localPosition = Vector3.up * 1.8f;
+        m_ballCollected = true;
+        m_ball.GetComponent<Rigidbody>().isKinematic = true;
     }
 
     // Wander State Transition -> If the agent collects the ball, change to Attack State; if the agent cannot find a ball, change to Defend State.
     private void CheckWanderState()
     {
-        if (ballCollected)
+        if (m_ballCollected)
         {
             m_agent.ChangeState(1);
         }
@@ -353,7 +457,7 @@ public class AIAgentController : MonoBehaviour
     // Attack State Transition -> If the agent no longer has a ball, change to Wander State.
     private void CheckAttackState()
     {
-        if (!ballCollected)
+        if (!m_ballCollected)
         {
             m_agent.ChangeState(0);
         }
@@ -386,7 +490,7 @@ public class AIAgentController : MonoBehaviour
         Vector3 agentPos = m_agent.transform.position;
         int layerMask = 1 << LayerMask.NameToLayer("Target");
         // m_courtCentre * -1f ==> the opposite side of the court
-        Collider[] hitInfo = Physics.OverlapBox(m_courtCentre * -1f, m_courtDimensions, Quaternion.identity, layerMask);
+        Collider[] hitInfo = Physics.OverlapBox(m_courtCentre * -1f, m_courtDimensions, Quaternion.identity, layerMask, QueryTriggerInteraction.Ignore);
         float nearDistance = Mathf.Infinity;
 
         for (int i = 0; i < hitInfo.Length; ++i)
@@ -399,18 +503,12 @@ public class AIAgentController : MonoBehaviour
                 m_target = hitInfo[i].transform;
             }
         }
-
-        // Currently not used, but saves the distance to target
-        if (nearDistance < Mathf.Infinity)
-        {
-            m_targetDistance = nearDistance;
-        }
     }
 
     // Attack State -> If agent is facing target and passes probability check then they throw, otherwise they move closer to target.
     private void TryThrow()
     {
-        if (!ballCollected || !HasTarget())
+        if (!m_ballCollected || !HasTarget())
         {
             return;
         }
@@ -418,29 +516,20 @@ public class AIAgentController : MonoBehaviour
         if (CheckFacingTarget(m_target) && CheckThrowProbablity())
         {
             m_ball.GetComponent<BallProjectile>().Throw(m_target.gameObject);
-            ballCollected = false;
+            m_ballCollected = false;
             m_ball = null;
-            m_pathList.Clear();
-            m_agent.StopLinearVelocity();
-            m_agent.StopAngularVelocity();
+            m_target = null;
+
+            //m_pathList.Clear();
+            //m_agent.StopLinearVelocity();
+            //m_agent.StopAngularVelocity();
+
             //Debug.Log("Path count = " + m_pathList.Count);
         }
         else
         {
             //Debug.Log("TryThrow failed, moving to destination");
             MoveTowardsDestination();
-        }
-    }
-
-    // Attack State -> If the ball lands against the edge of court, chance the ball clips through the wall and causes the agent to become stuck.
-    // This detects the clipping as it occurs (even if it won't produce the bug) and teleports them away from the wall.
-    private void CheckIfStuck()
-    {
-        RaycastHit hitInfo;
-
-        if (Physics.Raycast(m_agent.transform.position, m_agent.transform.forward, out hitInfo, 1.5f, m_unstuckLayer, QueryTriggerInteraction.Ignore))
-        {
-            m_agent.transform.Translate(m_agent.transform.forward * -2f, Space.World);
         }
     }
 
@@ -454,6 +543,7 @@ public class AIAgentController : MonoBehaviour
         {
             probablity = 0.1f + 0.9f * ((12.5f - zPos) / 11.5f);
 
+            Random.InitState(System.DateTime.Now.Millisecond);
             float random = Random.Range(Mathf.Epsilon, 1f);
 
             if (random < probablity)
@@ -468,7 +558,7 @@ public class AIAgentController : MonoBehaviour
     // Attack State -> If too close to the centre line with the ball, find a position farther back to attack.
     private void FindAttackDestination()
     {
-        if (!ballCollected || !HasTarget())
+        if (!m_ballCollected || !HasTarget())
         {
             return;
         }
@@ -497,15 +587,67 @@ public class AIAgentController : MonoBehaviour
 
         do
         {
+            Random.InitState(System.DateTime.Now.Millisecond);
             float xRand = Random.Range(-22f, 22f);
+            Random.InitState(System.DateTime.Now.Millisecond + 10);
             float zRand = Random.Range(5f, 22f) * m_zPosSign;
             nextPos = new Vector3(xRand, 1f, zRand);
             distanceToNext = Vector3.Distance(m_agent.transform.position, nextPos);
 
         } while (distanceToNext < RANDOM_POSITION_MIN_DISTANCE || distanceToNext > RANDOM_POSITION_MAX_DISTANCE);
 
-        //Debug.Log("Generated Position = " + nextPos);
 
-        OnDestinationFound(nextPos);
+        if (m_enteredDefenseState)
+        {
+            m_enteredDefenseState = false;
+
+            int layerMask = 1 << LayerMask.NameToLayer("Target");
+
+            Collider[] hitInfo = Physics.OverlapSphere(m_agent.transform.position, 5f, layerMask, QueryTriggerInteraction.Collide);
+            float nearDistance = Mathf.Infinity;
+            float distanceToTeammate = 0f;
+            Transform nearTeammate = null;
+
+            for (int i = 0; i < hitInfo.Length; ++i)
+            {
+                if (hitInfo[i].transform == m_agent.transform)
+                {
+                    continue;
+                }
+
+                distanceToTeammate = Vector3.Distance(m_agent.transform.position, hitInfo[i].transform.position);
+
+                if (distanceToTeammate < nearDistance)
+                {
+                    nearDistance = distanceToTeammate;
+                    nearTeammate = hitInfo[i].transform;
+                }
+            }
+
+            if (nearTeammate)
+            {
+                if (m_agent.transform.position.x < nearTeammate.position.x)
+                {
+                    nextPos = new Vector3(Mathf.Max(-22f, m_agent.transform.position.x - 5f), m_agent.transform.position.y, m_agent.transform.position.z);
+                }
+                else
+                {
+                    nextPos = new Vector3(Mathf.Min(22f, m_agent.transform.position.x + 5f), m_agent.transform.position.y, m_agent.transform.position.z);
+                }
+            }
+        }
+
+        OnDestinationFound(nextPos/*, m_agent.GetAreaMask()*/);
+    }
+
+    // ?
+    private void CheckIfStuck()
+    {
+        RaycastHit hitInfo;
+
+        if (Physics.Raycast(m_agent.transform.position, m_agent.transform.forward, out hitInfo, 1.5f, m_unstuckLayer, QueryTriggerInteraction.Ignore))
+        {
+            m_agent.transform.Translate(m_agent.transform.forward * -2f, Space.World);
+        }
     }
 }

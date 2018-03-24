@@ -8,6 +8,12 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Main.unity
     guid: 995135e527c20074fb918a16bb9e5779
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/Demo_ShuffleBoard.unity
     guid: ff96fd6e9624bce4b8f1ec75ffce31bd
+  - enabled: 1
+    path: Assets/Scenes/Dodgeball.unity
+    guid: 267c5cdc4f758be49a16c88f0b12c6ed
+  - enabled: 1
+    path: Assets/Scenes/HitTheTarget.unity
+    guid: 515f4de6ed7dd3e4096f2f5aa55f6d7b

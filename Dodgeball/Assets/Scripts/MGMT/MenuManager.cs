@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class MenuManager : MonoBehaviour
 {
@@ -24,7 +25,7 @@ public class MenuManager : MonoBehaviour
 
     public void PlayPhysics()
     {
-        // load scene
+        SceneManager.LoadScene(2);
     }
 
     public void TogglePhysicsControls()
@@ -34,7 +35,7 @@ public class MenuManager : MonoBehaviour
 
     public void PlayDodgeball()
     {
-        // load scene
+        SceneManager.LoadScene(1);
     }
 
     public void ToggleDodgeballControls()

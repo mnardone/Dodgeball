@@ -1,13 +1,11 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class BallProjectile : MonoBehaviour
 {
     private Rigidbody m_rb = null;
-
-    // Stationary target
-    private Transform m_targetTransform;
 
     [SerializeField] private float m_maxSpeed = 25f;
 
@@ -15,7 +13,20 @@ public class BallProjectile : MonoBehaviour
     private GameObject m_target = null;
     private float m_desiredAirTime = 1.0f;
 
-    public bool inAir { get; private set; }
+    private bool m_inAir = false;
+
+    public bool inAir
+    {
+        get
+        {
+            return m_inAir;
+        }
+        private set
+        {
+            m_inAir = value;
+            //Debug.Log("inAir = " + inAir);
+        }
+    }
 
     private void Awake()
     {
@@ -27,10 +38,16 @@ public class BallProjectile : MonoBehaviour
     private float GenerateRandomValue()
     {
         float mean = 0f;
-        float stdDev = 1.4f;    // test test test --> approx 25% miss rate
+        float stdDev = 1.2f;    // test test test --> 1.4 = approx 25% miss rate
 
+        Random.InitState(System.DateTime.Now.Millisecond);
         float f1 = Random.Range(0f, 1f - Mathf.Epsilon);
+
+        Random.InitState(System.DateTime.Now.Millisecond + 10);
         float f2 = Random.Range(0f, 1f - Mathf.Epsilon);
+
+        //Debug.Log("F1 = " + f1);
+        //Debug.Log("F2 = " + f2);
 
         float randStdNormal = Mathf.Sqrt(-2f * Mathf.Log(f1)) * Mathf.Sin(2f * Mathf.PI * f2);
         float randNormal = mean + stdDev * randStdNormal;
@@ -42,7 +59,11 @@ public class BallProjectile : MonoBehaviour
 
     private Vector3 GenerateRandomUnitVector()
     {
+        Random.InitState(System.DateTime.Now.Millisecond);
         Vector3 rand = Random.insideUnitSphere;
+
+        //Debug.Log("Random unit vector = " + rand);
+
         return rand;
     }
 
@@ -52,9 +73,34 @@ public class BallProjectile : MonoBehaviour
         m_target = target;
         this.transform.SetParent(null);
         inAir = true;
-        Vector3 velocity = CalculateWithMaxVel(CalculateTargetPosition() + GenerateRandomUnitVector() * GenerateRandomValue()).velocity;
         m_rb.isKinematic = false;
-        m_rb.velocity = velocity;
+
+        Vector3 targetPos = CalculateTargetPosition();
+
+        if (targetPos.y < -99f)
+        {
+            m_rb.velocity = m_target.transform.position.normalized * m_maxSpeed;
+        }
+        else
+        {
+            Random.InitState(System.DateTime.Now.Millisecond);
+            //Debug.Log("Seed = " + System.DateTime.Now.Millisecond);
+
+            targetPos += GenerateRandomUnitVector() * GenerateRandomValue();
+            Vector3 velocity = CalculateWithMaxVel(targetPos).velocity;
+
+            if (velocity == Vector3.zero)
+            {
+                m_rb.velocity = m_target.transform.position.normalized * m_maxSpeed;
+            }
+            else
+            {
+                //Debug.Log("Throwing... ");
+                //Debug.Log("Target Pos = " + targetPos);
+                //Debug.Log("Velocity = " + velocity);
+                m_rb.velocity = velocity;
+            }
+        }
     }
 
     // This method is called by the ball in Hit The Target
@@ -62,7 +108,26 @@ public class BallProjectile : MonoBehaviour
     {
         m_target = target;
         m_rb.isKinematic = false;
-        m_rb.velocity = CalculateWithMaxVel(CalculateTargetPosition()).velocity * multiplier;
+
+        Vector3 targetPos = CalculateTargetPosition();
+
+        if (targetPos.y < -99f)
+        {
+            m_rb.velocity = m_target.transform.position.normalized * m_maxSpeed * multiplier;
+        }
+        else
+        {
+            Vector3 velocity = CalculateWithMaxVel(targetPos).velocity * multiplier;
+
+            if (velocity == Vector3.zero)
+            {
+                m_rb.velocity = m_target.transform.position.normalized * m_maxSpeed * multiplier;
+            }
+            else
+            {
+                m_rb.velocity = velocity;
+            }
+        }
     }
 
     public struct VelocityTimeData
@@ -83,17 +148,27 @@ public class BallProjectile : MonoBehaviour
         float a = (Physics.gravity.y * Mathf.Pow(horizontalDisplacement, 2)) / (2f * Mathf.Pow(m_maxSpeed, 2));
         float c = a - heightDisplacement;
 
-        float tanThetaPlus = QuadraticFormula(a, horizontalDisplacement, c, 1);
-        float tanThetaMinus = QuadraticFormula(a, horizontalDisplacement, c, -1);
-        float thetaPlus = Mathf.Atan(tanThetaPlus);
-        float thetaMinus = Mathf.Atan(tanThetaMinus);
-        float theta = Mathf.Min(thetaMinus, thetaPlus);
+        float radicand = Mathf.Pow(horizontalDisplacement, 2) - 4f * a * c;
 
-        velocity = displacement.normalized * m_maxSpeed * Mathf.Cos(theta);
-        velocity.y = m_maxSpeed * Mathf.Sin(theta);
+        if (radicand < 0)
+        {
+            data.time = 0f;
+        }
+        else
+        {
+            float tanThetaPlus = QuadraticFormula(a, horizontalDisplacement, c, 1);
+            float tanThetaMinus = QuadraticFormula(a, horizontalDisplacement, c, -1);
+            float thetaPlus = Mathf.Atan(tanThetaPlus);
+            float thetaMinus = Mathf.Atan(tanThetaMinus);
+            float theta = Mathf.Min(thetaMinus, thetaPlus);
+
+            velocity = displacement.normalized * m_maxSpeed * Mathf.Cos(theta);
+            velocity.y = m_maxSpeed * Mathf.Sin(theta);
+
+            data.time = horizontalDisplacement / (m_maxSpeed * Mathf.Cos(theta));
+        }
 
         data.velocity = velocity;
-        data.time = horizontalDisplacement / (m_maxSpeed * Mathf.Cos(theta));
 
         return data;
     }
@@ -152,7 +227,7 @@ public class BallProjectile : MonoBehaviour
     //   refine results until within acceptable margin.
     private Vector3 PositionBinarySearch(Vector3 pos1, Vector3 pos2)
     {
-        Vector3 aimPos = Vector3.zero;
+        Vector3 aimPos = new Vector3(0f, -100f, 0f);
         Vector3 targetPos = Vector3.zero;
         float newTime = 0f;
         bool notCloseEnough = true;
@@ -162,6 +237,12 @@ public class BallProjectile : MonoBehaviour
         {
             aimPos = 0.5f * (pos1 + pos2);                  // halfway point
             newTime = CalculateWithMaxVel(aimPos).time;     // time to throw to halfway point
+
+            if (newTime == 0)
+            {
+                return aimPos;
+            }
+
             targetPos = FindNewTargetPosition(newTime);     // target's position after that time
 
             if (Vector3.Distance(targetPos, aimPos) <= 0.1f)
@@ -181,7 +262,7 @@ public class BallProjectile : MonoBehaviour
 
             if (count == 15)    // Only attempt this process 15 times. Successes typically run this loop 5-10 times.
             {
-                notCloseEnough = false;
+                return aimPos;
             }
         }
 
@@ -199,10 +280,25 @@ public class BallProjectile : MonoBehaviour
         return (-b + Mathf.Sqrt(Mathf.Pow(b, 2) - 4 * a * c) * sign) / (2 * a);
     }
 
-    // inAir = false --> Allows agents to remember the ball when scanning
     private void OnCollisionEnter(Collision c)
     {
-        inAir = false;
+        //Debug.Log("Ball collided with... " + c.gameObject.tag);
+
+        if (c.gameObject.tag == "Agent")
+        {
+            Random.InitState(System.DateTime.Now.Millisecond);
+            float rand = Random.Range(0f, 1f);
+            //Debug.Log("Hit/Catch Random = " + rand);
+
+            if (rand < 0.5f)
+            {
+                inAir = false;
+            }
+        }
+        else
+        {
+            inAir = false;
+        }
     }
 
     // OLD METHOD - Based on an AIR TIME instead of MAX VELOCITY
