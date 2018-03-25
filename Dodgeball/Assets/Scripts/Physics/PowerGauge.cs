@@ -54,4 +54,14 @@ public class PowerGauge : MonoBehaviour
         //    //Debug.LogFormat("Gauge Multiplier %: {0}", multiplier * 100f);
         //}
 	}
+
+    public void SetProjectile(BallProjectile ball)
+    {
+        m_proj = ball;
+    }
+
+    public float GetMultiplier()
+    {
+        return (440f + m_powerGaugeSlider.localPosition.x) / 440f;
+    }
 }

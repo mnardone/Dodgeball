@@ -28,6 +28,8 @@ public class DodgeballManager : MonoBehaviour
     private float m_timer = 0f;
     private bool m_gameOver = false;
 
+    [SerializeField] private GameObject m_ball = null;
+
     public int ScoreRed
     {
         get
@@ -75,8 +77,9 @@ public class DodgeballManager : MonoBehaviour
     private void Start ()
     {
         TogglePause();
-        //ToggleEndPanel();
         m_panelEnd.SetActive(false);
+        CheckTimeScale(m_panelEnd);
+        SpawnBall();
 	}
 
     private void Update ()
@@ -98,6 +101,16 @@ public class DodgeballManager : MonoBehaviour
         }
 	}
 
+    private void SpawnBall()
+    {
+        Random.InitState(System.DateTime.Now.Millisecond);
+        float randX = Random.Range(-24f, 24f);
+        float randZ = Random.Range(-24f, 24f);
+        Vector3 spawnPos = new Vector3(randX, 1f, randZ);
+
+        Instantiate(m_ball, spawnPos, Quaternion.identity);
+    }
+
     private void UpdateTimer()
     {
         int minutes = (int)(m_timer / 60f);
@@ -116,7 +129,7 @@ public class DodgeballManager : MonoBehaviour
     private void CheckGameState()
     {
         // 5 minutes or 5 points
-        if (m_timer > 300f || m_scoreBlue == 5 || m_scoreRed == 5)
+        if (m_timer > 10f || m_scoreBlue == 5 || m_scoreRed == 5)
         {
             m_gameOver = true;
         }
@@ -124,6 +137,8 @@ public class DodgeballManager : MonoBehaviour
 
     private void GameOver()
     {
+        Time.timeScale = 0f;
+
         if (m_scoreRed > m_scoreBlue)
         {
             m_winnerText.text = "RED TEAM WINS!";
@@ -156,11 +171,11 @@ public class DodgeballManager : MonoBehaviour
     {
         if (obj.activeSelf)
         {
-            Time.timeScale = 0;
+            Time.timeScale = 0f;
         }
         else
         {
-            Time.timeScale = 1;
+            Time.timeScale = 1f;
         }
     }
 

@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class BallProjectile : MonoBehaviour
 {
-    private Rigidbody m_rb = null;
+    [SerializeField] private Rigidbody m_rb = null;
 
     [SerializeField] private float m_maxSpeed = 25f;
 
@@ -21,7 +22,7 @@ public class BallProjectile : MonoBehaviour
         {
             return m_inAir;
         }
-        private set
+        set
         {
             m_inAir = value;
             //Debug.Log("inAir = " + inAir);
@@ -177,8 +178,9 @@ public class BallProjectile : MonoBehaviour
     private Vector3 CalculateTargetPosition()
     {
         Vector3 targetPosFinal = m_target.transform.position;
+        Vector3 targetVel = m_target.GetComponent<Rigidbody>().velocity;
 
-        if (m_target.GetComponent<Rigidbody>().velocity == Vector3.zero)
+        if (targetVel == Vector3.zero)
         {
             return targetPosFinal;
         }
@@ -188,8 +190,17 @@ public class BallProjectile : MonoBehaviour
         int layermask = 1 << LayerMask.NameToLayer("Wall");
 
         // 71 = sqrt(50^2 + 50^2), ie court dimensions
-        Physics.Raycast(pos1, m_target.GetComponent<Rigidbody>().velocity, out hitInfo, 71f, layermask);
-        Vector3 pos3 = hitInfo.point;
+        bool rayHit = Physics.Raycast(pos1, m_target.GetComponent<Rigidbody>().velocity, out hitInfo, 71f, layermask);
+        Vector3 pos3;
+
+        if (rayHit)
+        {
+            pos3 = hitInfo.point;
+        }
+        else
+        {
+            pos3 = pos1 + targetVel * 5f;   // Current pos + Velocity * 5 seconds
+        }
 
         targetPosFinal = PositionBinarySearch(pos1, pos3);
 
@@ -284,20 +295,34 @@ public class BallProjectile : MonoBehaviour
     {
         //Debug.Log("Ball collided with... " + c.gameObject.tag);
 
-        if (c.gameObject.tag == "Agent")
-        {
-            Random.InitState(System.DateTime.Now.Millisecond);
-            float rand = Random.Range(0f, 1f);
-            //Debug.Log("Hit/Catch Random = " + rand);
+        //if (c.gameObject.tag == "Agent")
+        //{
+        //    Random.InitState(System.DateTime.Now.Millisecond);
+        //    float rand = Random.Range(0f, 1f);
+        //    //Debug.Log("Hit/Catch Random = " + rand);
 
-            if (rand < 0.5f)
-            {
-                inAir = false;
-            }
-        }
-        else
+        //    if (rand < 0.5f)
+        //    {
+        //        inAir = false;
+        //    }
+        //}
+        //else
+        //{
+        //    inAir = false;
+        //}
+
+        if (c.gameObject.tag != "Agent")
         {
             inAir = false;
+        }
+
+        if (SceneManager.GetActiveScene().buildIndex == 2)
+        {
+            //Debug.Log("In scene 2, collided with " + c.gameObject.name);
+            if (c.gameObject.name == "Floor" && PhysicsGameManager.Instance.RoundActive && PhysicsGameManager.Instance.ShotsLeft != 0)
+            {
+                PhysicsGameManager.Instance.ResetBall();
+            }
         }
     }
 

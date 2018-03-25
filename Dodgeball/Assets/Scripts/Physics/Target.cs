@@ -17,7 +17,7 @@ public class Target : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (m_rb.velocity != Vector3.zero)
+        if (m_rb.velocity != Vector3.zero && m_rb.useGravity == false)
         {
             PhysicsGameManager.Instance.CheckBoundaries(m_rb);
         }
@@ -30,14 +30,27 @@ public class Target : MonoBehaviour
         m_rb.velocity = m_velocity;
     }
 
+    public void EndRound()
+    {
+        //Debug.Log("Ending round for " + name);
+        transform.position = Vector3.up * -20f;
+        m_rb.useGravity = false;
+        m_rb.velocity = Vector3.zero;
+    }
+
     // Score added based on point of collision
     private void OnCollisionEnter(Collision c)
     {
-        // 1) Check point of collision
-        // 2) Check distance to centre
-        // 3) if dist < (bullseye radius) then add 100
-        //    else if dist < (inner radius) then add 50
-        //    else if dist < (outer radius) then add 25
-        //    else do nothing?
+        //Debug.Log(name + " is colliding with something");
+        if (m_rb.useGravity == false && c.gameObject.tag != "Target")
+        {
+            float distanceToCentre = Vector3.Distance(this.transform.position, c.contacts[0].point);
+            int multiplier = Mathf.FloorToInt(distanceToCentre * 2f);
+            int score = Mathf.Max(0, 100 - 20 * multiplier);
+            PhysicsGameManager.Instance.CurrentScore += score;
+            m_rb.useGravity = true;
+            PhysicsGameManager.Instance.CycleNextTarget();
+            
+        }
     }
 }

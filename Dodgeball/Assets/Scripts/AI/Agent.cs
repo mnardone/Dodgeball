@@ -184,7 +184,17 @@ public class Agent : MonoBehaviour {
     {
         if (c.gameObject.tag == "InteractableObject")
         {
-            if (c.gameObject.GetComponent<BallProjectile>().inAir)
+            BallProjectile tempBall = c.gameObject.GetComponent<BallProjectile>();
+            Random.InitState(System.DateTime.Now.Millisecond);
+            float rand = Random.Range(0f, 1f);
+
+            if (rand < 0.5f)
+            {
+                tempBall.inAir = false;
+                m_controller.PickUpBall(c.gameObject);
+                ActivatePopUpText(c.gameObject.transform, m_catchText);
+            }
+            else
             {
                 if (m_team == Team.Blue)
                 {
@@ -197,11 +207,24 @@ public class Agent : MonoBehaviour {
 
                 ActivatePopUpText(c.gameObject.transform, m_hitText);
             }
-            else
-            {
-                m_controller.PickUpBall(c.gameObject);
-                ActivatePopUpText(c.gameObject.transform, m_catchText);
-            }
+
+            //if (tempBall.inAir)
+            //{
+            //    if (m_team == Team.Blue)
+            //    {
+            //        DodgeballManager.Instance.ScoreRed += 1;
+            //    }
+            //    else
+            //    {
+            //        DodgeballManager.Instance.ScoreBlue += 1;
+            //    }
+            //    ActivatePopUpText(c.gameObject.transform, m_hitText);
+            //}
+            //else
+            //{
+            //    m_controller.PickUpBall(c.gameObject);
+            //    ActivatePopUpText(c.gameObject.transform, m_catchText);
+            //}
         }
     }
 

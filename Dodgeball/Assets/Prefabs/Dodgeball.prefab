@@ -24,9 +24,9 @@ GameObject:
   - component: {fileID: 23625701853039158}
   - component: {fileID: 54481335102151082}
   - component: {fileID: 114009374224628780}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Dodgeball
-  m_TagString: Untagged
+  m_TagString: InteractableObject
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -96,7 +96,7 @@ Rigidbody:
   m_Drag: 0
   m_AngularDrag: 0
   m_UseGravity: 1
-  m_IsKinematic: 1
+  m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 80
   m_CollisionDetection: 1
@@ -111,10 +111,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5ecc11455aeba964e91a844a4a9b28dc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_targetTransform: {fileID: 0}
+  m_rb: {fileID: 54481335102151082}
   m_maxSpeed: 25
-  m_movingTarget: {fileID: 0}
-  m_desiredAirTime: 1
 --- !u!135 &135389591379126706
 SphereCollider:
   m_ObjectHideFlags: 1
