@@ -261,6 +261,11 @@ public class PhysicsGameManager : MonoBehaviour
         SceneManager.LoadScene(0);
     }
 
+    public void PlayAgain()
+    {
+        SceneManager.LoadScene(2);
+    }
+
     private void OnLevelWasLoaded(int level)
     {
         if (level == 2)

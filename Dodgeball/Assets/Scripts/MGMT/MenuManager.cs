@@ -6,9 +6,6 @@ using UnityEngine.SceneManagement;
 
 public class MenuManager : MonoBehaviour
 {
-    // What else does this script need?
-    // -
-
     [Header("Menu Panels")]
     [SerializeField] private GameObject m_panelPhysicsControls = null;
     [SerializeField] private GameObject m_panelDodgeballControls = null;
@@ -17,10 +14,14 @@ public class MenuManager : MonoBehaviour
 
     private void Awake()
     {
-        TogglePhysicsControls();
-        ToggleDodgeballControls();
-        ToggleOptions();
-        ToggleScoreboard();
+        m_panelPhysicsControls.SetActive(false);
+        m_panelDodgeballControls.SetActive(false);
+        m_panelOptions.SetActive(false);
+        m_panelScoreboard.SetActive(false);
+        //TogglePhysicsControls();
+        //ToggleDodgeballControls();
+        //ToggleOptions();
+        //ToggleScoreboard();
     }
 
     public void PlayPhysics()

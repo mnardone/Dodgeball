@@ -76,7 +76,7 @@ public class DodgeballManager : MonoBehaviour
 
     private void Start ()
     {
-        TogglePause();
+        m_panelPause.SetActive(false);
         m_panelEnd.SetActive(false);
         CheckTimeScale(m_panelEnd);
         SpawnBall();
@@ -104,9 +104,18 @@ public class DodgeballManager : MonoBehaviour
     private void SpawnBall()
     {
         Random.InitState(System.DateTime.Now.Millisecond);
+        // pick a random position
         float randX = Random.Range(-24f, 24f);
-        float randZ = Random.Range(-24f, 24f);
-        Vector3 spawnPos = new Vector3(randX, 1f, randZ);
+        float randZ = Random.Range(24f, 1f);
+        // pick a random side
+        float randSide = 0f;
+
+        do
+        {
+            randSide = Random.Range(-1f, 1f);
+        } while (randSide == 0f);
+
+        Vector3 spawnPos = new Vector3(randX, 1f, randZ * randSide);
 
         Instantiate(m_ball, spawnPos, Quaternion.identity);
     }
@@ -129,7 +138,7 @@ public class DodgeballManager : MonoBehaviour
     private void CheckGameState()
     {
         // 5 minutes or 5 points
-        if (m_timer > 10f || m_scoreBlue == 5 || m_scoreRed == 5)
+        if (m_timer > 300f || m_scoreBlue == 5 || m_scoreRed == 5)
         {
             m_gameOver = true;
         }

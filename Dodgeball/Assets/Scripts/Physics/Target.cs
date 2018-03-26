@@ -9,6 +9,7 @@ public class Target : MonoBehaviour
 
     [SerializeField] private Vector3 m_position = Vector3.zero;
     [SerializeField] private Vector3 m_velocity = Vector3.zero;
+    [SerializeField] private GameObject m_confetti = null;
 
     private void Awake ()
     {
@@ -50,7 +51,8 @@ public class Target : MonoBehaviour
             PhysicsGameManager.Instance.CurrentScore += score;
             m_rb.useGravity = true;
             PhysicsGameManager.Instance.CycleNextTarget();
-            
+            GameObject temp = Instantiate(m_confetti, this.transform.position, Quaternion.identity);
+            Destroy(temp, 3f);
         }
     }
 }
